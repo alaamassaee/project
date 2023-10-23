@@ -14,7 +14,7 @@ resource "aws_instance" "bastion_host" {
 resource "aws_security_group" "bastion_sg" {
   name        = "bastion_sg"
   vpc_id      = var.vpc_id
-  description = "Allow authorized ssh"
+  description = "mini-project-Allow authorized ssh"
 
   dynamic "ingress" {
     for_each = [22]

@@ -10,6 +10,9 @@ output "public_subnet2_id" {
 output "private_subnet1_id" {
   value = module.app_vpc.private_subnet1_id
 }
+output "private_subnet2_id" {
+  value = module.app_vpc.private_subnet2_id
+}
 output "frontend_tg_arn" {
   value = module.alb.frontend_tg_arn
 }
@@ -30,3 +33,9 @@ output "s3_bucket_url" {
 # output "alb_sg" {
 #   value = module.app_vpc.
 # }
+output "alb_sg" {
+  value = module.alb.alb_sg
+}
+output "bastion_host_sg" {
+  value = module.bastion_host.bastion_host_sg
+}

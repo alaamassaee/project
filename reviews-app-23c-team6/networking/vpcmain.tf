@@ -109,8 +109,9 @@ resource "aws_route_table_association" "privsub2_ass" {
 
 # CREATE SECURITY GROUP FOR VPC
 resource "aws_security_group" "app-vpc-sg" {
-  name   = "${var.name_tag}_sg"
-  vpc_id = aws_vpc.app_vpc.id
+  name        = "${var.name_tag}_sg"
+  vpc_id      = aws_vpc.app_vpc.id
+  description = "mini-project-vpc-sg"
 
   dynamic "ingress" {
     for_each = [22, 80, 443]

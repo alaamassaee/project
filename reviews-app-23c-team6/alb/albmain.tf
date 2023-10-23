@@ -1,6 +1,7 @@
 resource "aws_security_group" "alb_sg" {
   name_prefix = "alb-sg-"
   vpc_id      = var.vpc_id
+  description = "mini-project-alb-sg"
 
   dynamic "ingress" {
     for_each = [80, 443]
@@ -31,7 +32,7 @@ resource "aws_lb" "my_alb" {
 
 resource "aws_lb_target_group" "frontend_target_group" {
   name        = var.alb_be_tg_name
-  port        = 443
+  port        = 80
   protocol    = var.protocol
   target_type = var.target_type
   vpc_id      = var.vpc_id
@@ -39,7 +40,7 @@ resource "aws_lb_target_group" "frontend_target_group" {
 
 resource "aws_lb_target_group" "backend_target_group" {
   name        = var.alb_fe_tg_name
-  port        = 443
+  port        = 80
   protocol    = var.protocol
   target_type = var.target_type
   vpc_id      = var.vpc_id
@@ -47,7 +48,7 @@ resource "aws_lb_target_group" "backend_target_group" {
 
 resource "aws_lb_listener" "frontend_listener" {
   load_balancer_arn = aws_lb.my_alb.arn
-  port              = 443
+  port              = 80
   protocol          = var.protocol
   ssl_policy        = var.ssl_policy
   certificate_arn   = var.cert_arn
@@ -57,10 +58,24 @@ resource "aws_lb_listener" "frontend_listener" {
     target_group_arn = aws_lb_target_group.frontend_target_group.arn
   }
 }
+resource "aws_lb_listener_rule" "frontend_rule" {
+  listener_arn = aws_lb_listener.frontend_listener.arn
+  priority     = 100
 
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend_target_group.arn
+  }
+
+  condition {
+    host_header {
+      values = ["reviews.massaee.click"]
+    }
+  }
+}
 resource "aws_lb_listener" "backend_listener" {
   load_balancer_arn = aws_lb.my_alb.arn
-  port              = 80
+  port              = 443
   protocol          = var.protocol
   ssl_policy        = var.ssl_policy
   certificate_arn   = var.cert_arn
@@ -71,32 +86,21 @@ resource "aws_lb_listener" "backend_listener" {
   }
 }
 
-# resource "aws_instance" "frontend_instances" {
-#   count         = 2              # Change this to the desired number of instances
-#   ami           = "ami-xxxxxxxx" # Replace with your AMI ID
-#   instance_type = "t2.micro"     # Replace with your desired instance type
-#   # Configure instance details as needed
-# }
+resource "aws_lb_listener_rule" "backend_rule" {
+  listener_arn = aws_lb_listener.backend_listener.arn
+  priority     = 200
 
-# resource "aws_instance" "backend_instances" {
-#   count         = 2              # Change this to the desired number of instances
-#   ami           = "ami-yyyyyyyy" # Replace with your AMI ID
-#   instance_type = "t2.micro"     # Replace with your desired instance type
-#   # Configure instance details as needed
-# }
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_target_group.arn
+  }
 
-# resource "aws_lb_target_group_attachment" "frontend_attachment" {
-#   # count            = length(aws_instance.frontend_instances)
-#   target_group_arn = aws_lb_target_group.frontend_target_group.arn
-#   target_id        = aws_instance.frontend_instances[count.index].id
-# }
-
-
-# resource "aws_lb_target_group_attachment" "backend_attachment" {
-#   # count            = length(aws_instance.frontend_instances)
-#   target_group_arn = aws_lb_target_group.backend_target_group.arn
-#   target_id        = aws_instance.backend_instances[count.index].id
-# }
+  condition {
+    host_header {
+      values = ["reviews-api.massaee.click"]
+    }
+  }
+}
 
 resource "aws_route53_record" "frontend_record" {
   zone_id = var.zone_id
@@ -115,22 +119,22 @@ resource "aws_route53_record" "backend_record" {
   records = [aws_lb.my_alb.dns_name]
 }
 
-resource "aws_route53_record" "failover_record" {
-  zone_id = var.zone_id
-  name    = var.failover_record
-  type    = "CNAME"
+# resource "aws_route53_record" "failover_record" {
+#   zone_id = var.zone_id
+#   name    = var.failover_record
+#   type    = "CNAME"
 
-  failover_routing_policy {
-    type = "PRIMARY"
-  }
-  set_identifier = "primary"
-  # records        = [aws_lb.my_alb.dns_name]
-  alias {
-    name                   = aws_lb.my_alb.dns_name
-    zone_id                = aws_lb.my_alb.zone_id
-    evaluate_target_health = true
-  }
-}
+#   failover_routing_policy {
+#     type = "PRIMARY"
+#   }
+#   set_identifier = "primary"
+#   # records        = [aws_lb.my_alb.dns_name]
+#   alias {
+#     name                   = aws_lb.my_alb.dns_name
+#     zone_id                = aws_lb.my_alb.zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
 
 

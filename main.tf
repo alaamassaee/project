@@ -8,9 +8,12 @@ module "app_vpc" {
   name_tag         = var.name_tag
 }
 module "rds" {
-  source   = "./reviews-app-23c-team6/rds-db"
-  username = var.username
-  password = var.password
+  source          = "./reviews-app-23c-team6/rds-db"
+  username        = var.username
+  password        = var.password
+  vpc_id          = module.app_vpc.vpc_id
+  subnet_ids      = [module.app_vpc.private_subnet1_id, module.app_vpc.private_subnet2_id]
+  bastion_host_sg = [module.bastion_host.bastion_host_sg]
 }
 module "bastion_host" {
   source    = "./reviews-app-23c-team6/bastion-server"
@@ -37,47 +40,41 @@ module "alb" {
   alb_subnet_1    = module.app_vpc.public_subnet1_id
   alb_subnet_2    = module.app_vpc.public_subnet2_id
   failover_record = var.failover_record
-
 }
-
 module "lt" {
   source         = "./reviews-app-23c-team6/lt"
   instance_type  = var.ec2_type
   lt_name_prefix = var.lt_name_prefix
   frontend_ami   = var.ami_ids[0]
   backend_ami    = var.ami_ids[1]
-
+  vpc_sg         = module.alb.alb_sg
+  subnet_id      = module.app_vpc.public_subnet1_id
+  vpc_id         = module.app_vpc.vpc_id
 }
-
-module "asg" {
-  source                   = "./reviews-app-23c-team6/asg"
-  frontend_ami             = var.ami_ids[0]
-  backend_ami              = var.ami_ids[1]
-  instance_type            = var.ec2_type
-  subnet_ids               = module.app_vpc.public_subnet1_id
-  lt_name_prefix           = var.lt_name_prefix
-  desired_capacity         = var.desired_capacity
-  max_size                 = var.max_size
-  min_size                 = var.min_size
-  frontend_launch_template = module.lt.frontend_launch_template_id
-  backend_launch_template  = module.lt.backend_launch_template_id
-  target_group_arns        = module.alb.frontend_tg_arn
-
-
+module "front-asg" {
+  source            = "./reviews-app-23c-team6/asg"
+  instance_type     = var.ec2_type
+  subnet_ids        = module.app_vpc.public_subnet1_id
+  lt_name_prefix    = var.lt_name_prefix
+  desired_capacity  = var.desired_capacity
+  max_size          = var.max_size
+  min_size          = var.min_size
+  launch_template   = module.lt.frontend_launch_template_id
+  target_group_arns = [module.alb.frontend_tg_arn]
+  name              = "Frontend-Asg"
 }
-
-# module "asg_backend" {
-#   source                  = "./reviews-app-23c-team6/asg"
-#   instance_type           = var.ec2_type
-#   image_id                = var.ami_ids[1]
-#   subnet_ids              = module.app_vpc.public_subnet2_id
-#   lt_name_prefix          = var.lt_name_prefix
-#   desired_capacity        = var.desired_capacity
-#   max_size                = var.max_size
-#   min_size                = var.min_size
-#   backend_launch_template = module.lt-frontend.backend_launch_template_id
-#   target_group_arns       = module.alb.backend_tg_arn
-# }
+module "back-asg" {
+  source            = "./reviews-app-23c-team6/asg"
+  instance_type     = var.ec2_type
+  subnet_ids        = module.app_vpc.public_subnet1_id
+  lt_name_prefix    = var.lt_name_prefix
+  desired_capacity  = var.desired_capacity
+  max_size          = var.max_size
+  min_size          = var.min_size
+  launch_template   = module.lt.backend_launch_template_id
+  target_group_arns = [module.alb.backend_tg_arn]
+  name              = "Backend-Asg"
+}
 module "s3_module" {
   source               = "./reviews-app-23c-team6/s3"
   failover_bucket_name = var.failover_bucket_name
