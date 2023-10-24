@@ -41,7 +41,7 @@ resource "aws_db_subnet_group" "database_subnet_group" {
 # create the rds instance
 resource "aws_db_instance" "db_instance" {
   engine                 = "mysql"
-  engine_version         = "8.0.31"
+  engine_version         = "5.7"
   multi_az               = false
   identifier             = "mini-project-rds"
   username               = var.username

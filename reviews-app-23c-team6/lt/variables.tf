@@ -19,3 +19,6 @@ variable "subnet_id" {
 variable "vpc_id" {
   type = string
 }
+variable "open_to_elb_sg" {
+  type = list(string)
+}

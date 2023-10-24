@@ -1,5 +1,0 @@
-ami_id    = "ami-0df435f331839b2d6"
-ec2_type  = "t2.micro"
-key_name  = "project"
-subnet_id = "subnet-0490408fe95ab2732"
-vpc_id    = "vpc-07a448061361ba238"

@@ -22,7 +22,7 @@ resource "aws_security_group" "bastion_sg" {
       from_port   = ingress.value
       to_port     = ingress.value
       protocol    = "tcp"
-      cidr_blocks = ["67.87.37.117/32"]
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
   egress {

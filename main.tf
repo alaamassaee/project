@@ -7,39 +7,41 @@ module "app_vpc" {
   privsubnet2_cidr = var.privsubnet2_cidr
   name_tag         = var.name_tag
 }
-module "rds" {
-  source          = "./reviews-app-23c-team6/rds-db"
-  username        = var.username
-  password        = var.password
-  vpc_id          = module.app_vpc.vpc_id
-  subnet_ids      = [module.app_vpc.private_subnet1_id, module.app_vpc.private_subnet2_id]
-  bastion_host_sg = [module.bastion_host.bastion_host_sg]
-}
-module "bastion_host" {
-  source    = "./reviews-app-23c-team6/bastion-server"
-  ami_id    = var.ami_id
-  ec2_type  = var.ec2_type
-  key_name  = var.key_name
-  subnet_id = module.app_vpc.public_subnet1_id
-  vpc_id    = module.app_vpc.vpc_id
-}
+# module "rds" {
+#   source          = "./reviews-app-23c-team6/rds-db"
+#   username        = var.username
+#   password        = var.password
+#   vpc_id          = module.app_vpc.vpc_id
+#   subnet_ids      = [module.app_vpc.private_subnet1_id, module.app_vpc.private_subnet2_id]
+#   bastion_host_sg = [module.bastion_host.bastion_host_sg]
+# }
+# module "bastion_host" {
+#   source    = "./reviews-app-23c-team6/bastion-server"
+#   ami_id    = var.ami_id
+#   ec2_type  = var.ec2_type
+#   key_name  = var.key_name
+#   subnet_id = module.app_vpc.public_subnet1_id
+#   vpc_id    = module.app_vpc.vpc_id
+# }
 module "alb" {
-  source          = "./reviews-app-23c-team6/alb"
-  vpc_id          = module.app_vpc.vpc_id
-  alb_name        = var.alb_name
-  alb_type        = var.alb_type
-  alb_be_tg_name  = var.alb_be_tg_name
-  alb_fe_tg_name  = var.alb_fe_tg_name
-  protocol        = var.protocol
-  target_type     = var.target_type
-  ssl_policy      = var.ssl_policy
-  cert_arn        = var.cert_arn
-  zone_id         = var.zone_id
-  frontend_record = var.frontend_record
-  backend_record  = var.backend_record
-  alb_subnet_1    = module.app_vpc.public_subnet1_id
-  alb_subnet_2    = module.app_vpc.public_subnet2_id
-  failover_record = var.failover_record
+  source           = "./reviews-app-23c-team6/alb"
+  vpc_id           = module.app_vpc.vpc_id
+  alb_name         = var.alb_name
+  alb_type         = var.alb_type
+  alb_be_tg_name   = var.alb_be_tg_name
+  alb_fe_tg_name   = var.alb_fe_tg_name
+  protocol         = var.protocol
+  target_type      = var.target_type
+  ssl_policy       = var.ssl_policy
+  cert_arn         = var.cert_arn
+  zone_id          = var.zone_id
+  frontend_record  = var.frontend_record
+  backend_record   = var.backend_record
+  alb_subnet_1     = module.app_vpc.public_subnet1_id
+  alb_subnet_2     = module.app_vpc.public_subnet2_id
+  failover_record  = var.failover_record
+  listner_protocol = var.listner_protocol
+
 }
 module "lt" {
   source         = "./reviews-app-23c-team6/lt"
@@ -50,6 +52,8 @@ module "lt" {
   vpc_sg         = module.alb.alb_sg
   subnet_id      = module.app_vpc.public_subnet1_id
   vpc_id         = module.app_vpc.vpc_id
+  open_to_elb_sg = [module.alb.alb_sg]
+
 }
 module "front-asg" {
   source            = "./reviews-app-23c-team6/asg"
@@ -75,7 +79,7 @@ module "back-asg" {
   target_group_arns = [module.alb.backend_tg_arn]
   name              = "Backend-Asg"
 }
-module "s3_module" {
-  source               = "./reviews-app-23c-team6/s3"
-  failover_bucket_name = var.failover_bucket_name
-}
+# module "s3_module" {
+#   source               = "./reviews-app-23c-team6/s3"
+#   failover_bucket_name = var.failover_bucket_name
+# }

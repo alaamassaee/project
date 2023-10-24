@@ -120,7 +120,7 @@ resource "aws_security_group" "app-vpc-sg" {
       from_port   = ingress.value
       to_port     = ingress.value
       protocol    = "tcp"
-      cidr_blocks = ["192.168.0.0/16"]
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
   egress {

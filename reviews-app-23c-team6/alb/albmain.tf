@@ -1,7 +1,6 @@
 resource "aws_security_group" "alb_sg" {
   name_prefix = "alb-sg-"
   vpc_id      = var.vpc_id
-  description = "mini-project-alb-sg"
 
   dynamic "ingress" {
     for_each = [80, 443]
@@ -10,7 +9,7 @@ resource "aws_security_group" "alb_sg" {
       from_port   = ingress.value
       to_port     = ingress.value
       protocol    = "tcp"
-      cidr_blocks = ["192.168.0.0/16"]
+      cidr_blocks = ["0.0.0.0/0"]
     }
   }
   egress {
@@ -31,27 +30,41 @@ resource "aws_lb" "my_alb" {
 }
 
 resource "aws_lb_target_group" "frontend_target_group" {
-  name        = var.alb_be_tg_name
-  port        = 80
-  protocol    = var.protocol
-  target_type = var.target_type
-  vpc_id      = var.vpc_id
-}
-
-resource "aws_lb_target_group" "backend_target_group" {
   name        = var.alb_fe_tg_name
   port        = 80
   protocol    = var.protocol
   target_type = var.target_type
   vpc_id      = var.vpc_id
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_target_group" "backend_target_group" {
+  name        = var.alb_be_tg_name
+  port        = 80
+  protocol    = var.protocol
+  target_type = var.target_type
+  vpc_id      = var.vpc_id
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
 }
 
 resource "aws_lb_listener" "frontend_listener" {
   load_balancer_arn = aws_lb.my_alb.arn
   port              = 80
   protocol          = var.protocol
-  ssl_policy        = var.ssl_policy
-  certificate_arn   = var.cert_arn
+  # ssl_policy        = var.ssl_policy
+  # certificate_arn   = var.cert_arn
 
   default_action {
     type             = "forward"
@@ -73,10 +86,11 @@ resource "aws_lb_listener_rule" "frontend_rule" {
     }
   }
 }
+
 resource "aws_lb_listener" "backend_listener" {
   load_balancer_arn = aws_lb.my_alb.arn
   port              = 443
-  protocol          = var.protocol
+  protocol          = var.listner_protocol
   ssl_policy        = var.ssl_policy
   certificate_arn   = var.cert_arn
 
@@ -85,7 +99,6 @@ resource "aws_lb_listener" "backend_listener" {
     target_group_arn = aws_lb_target_group.backend_target_group.arn
   }
 }
-
 resource "aws_lb_listener_rule" "backend_rule" {
   listener_arn = aws_lb_listener.backend_listener.arn
   priority     = 200

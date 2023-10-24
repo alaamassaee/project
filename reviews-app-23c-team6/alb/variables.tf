@@ -43,3 +43,6 @@ variable "alb_subnet_1" {
 variable "failover_record" {
   type = string
 }
+variable "listner_protocol" {
+  type = string
+}
